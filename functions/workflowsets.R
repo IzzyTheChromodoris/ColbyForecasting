@@ -40,7 +40,7 @@ workflowset_selectomatic = function(wflow, splitdata,
 
 
 model_fit_metrics = function(x = read_model_fit(),
-                             ids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
+                             wids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
   
   #' Given a table of model fits extract the metrics into a tidy table
   #' 
@@ -49,7 +49,7 @@ model_fit_metrics = function(x = read_model_fit(),
   #' @return a table of metrics
 
   x |>
-    dplyr::filter(.data$wflow_id %in% ids) |>
+    dplyr::filter(.data$wflow_id %in% wids) |>
     dplyr::rowwise() |>
     dplyr::group_map(
       function(row, key){
@@ -62,9 +62,9 @@ model_fit_metrics = function(x = read_model_fit(),
 }
 
 model_fit_accuracy = function(x = read_model_fit(),
-                              ids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
+                              wids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
    x |>
-    dplyr::filter(wflow_id %in% ids) |>
+    dplyr::filter(wflow_id %in% wids) |>
     dplyr::rowwise() |>
     dplyr::group_map(
       function(row, key){
@@ -76,16 +76,16 @@ model_fit_accuracy = function(x = read_model_fit(),
 }
 
 model_fit_roc_auc = function(x = read_model_fit(),
-                             ids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
+                             wids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
   
   #' Given a table of model fits, plot the ROC curves with the AUC shown
   #' 
   #' @param x table of model fits
-  #' @param ids str, the workflow(s) to operate upon, by default all of them
+  #' @param wids str, the workflow(s) to operate upon, by default all of them
   #' @return faceted ggplot object
   
   pp = x |>
-    dplyr::filter(wflow_id %in% ids) |>
+    dplyr::filter(wflow_id %in% wids) |>
     dplyr::rowwise() |>
     dplyr::group_map(
     function(row, key){
@@ -127,17 +127,17 @@ model_fit_roc_auc = function(x = read_model_fit(),
 }
 
 model_fit_confmat = function(x = read_model_fit(),
-                             ids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
+                             wids = dplyr::pull(x, dplyr::all_of("wflow_id"))){
   
   #' Given a table of model fits, plot the confusion matrices
   #' 
   #' Borrows heavily from the [yardstick package](https://github.com/tidymodels/yardstick/blob/51761c4e7a34e960949c75aeb2952ef02c408106/R/conf_mat.R#L421)
   #' 
   #' @param x table of model fits
-  #' @param ids str, the workflow(s) to operate upon, by default all of them 
+  #' @param wids str, the workflow(s) to operate upon, by default all of them 
   #' @return faceted ggplot object 
   
-  acc = model_fit_accuracy(x, ids = ids)
+  acc = model_fit_accuracy(x, wids = wids)
   
   cm_as_tibble = function(cm){
     x = as.data.frame.table(cm$table) |>
@@ -150,7 +150,7 @@ model_fit_confmat = function(x = read_model_fit(),
   
   
   pp = x |>
-    dplyr::filter(wflow_id %in% ids) |>
+    dplyr::filter(wflow_id %in% wids) |>
     dplyr::rowwise() |>
     dplyr::group_map(
       function(row, key){
@@ -186,20 +186,140 @@ model_fit_confmat = function(x = read_model_fit(),
 
 
 model_fit_pdp = function(x,
-                         id = dplyr::pull(x, dplyr::all_of("wflow_id"))[1],
+                         wid = dplyr::pull(x, dplyr::all_of("wflow_id"))[1],
                          ...){
   
   #' Create a partial dependence plot for a model fit
   #' 
   #' @param x table of model fits
-  #' @param id str the id of the workflow to plot (wflow_id)
+  #' @param wid str the id of the workflow to plot (wflow_id)
   #' @param ... other arguments for the [partial_dependence_plot] function
   #' @return ggplot object
   
-  x |>
-    dplyr::filter(wflow_id == id[1])
-  partial_dependence_plot(x$.workflow[[1]], ...)
+  thisx = x |>
+    dplyr::filter(wflow_id == wid)
+  thisdata =  thisx$splits[[1]] |>
+    rsample::training() |>
+    dplyr::select(-class) |>
+    sf::st_drop_geometry()
+  if (model_fit_spec(thisx) == "boost_tree"){
+    thisdata = as.matrix(thisdata)
+  }
+  pd = partial_dependence(
+         object = workflows::extract_fit_engine(thisx$.workflow[[1]]), 
+         v = model_fit_varnames(thisx), 
+         data = thisdata,
+         which_pred = "presence",
+         prob = TRUE) 
+  plot(pd, ...)
+}
 
+model_fit_vi = function(x,
+                        wids = dplyr::pull(x, dplyr::all_of("wflow_id")),
+                        scale = TRUE,
+                        ...){
+  
+  #' Compute variable importance
+  #' 
+  #' @param x table of model fits
+  #' @param id str the id of the workflow to plot (wflow_id)
+  #' @param scale logical, if TRUE scale values 0-1 by model fit
+  #' @param ... other arguments for the [vip::vi] function
+  #' @return a table if variable importance values
+  
+  x |>
+    dplyr::filter(wflow_id %in% wids) |>
+    dplyr::rowwise() |>
+    dplyr::group_map(
+      function(row, key){
+        if (model_fit_spec(row) == "maxent"){
+          r = NULL
+        } else {
+          r = row$.workflow[[1]] |> 
+            workflows::extract_fit_parsnip() |>
+            vip::vi(scale = scale, ...) |>
+            dplyr::mutate(wflow_id = row$wflow_id, .before = 1)
+        }
+        r
+      })  |>
+    dplyr::bind_rows() |>
+    tidyr::pivot_wider(names_from = "Variable",
+                       values_from = "Importance")
+}
+
+
+model_fit_vip = function(x, ...){
+  #' Make a heat map showing relative variable importance
+  #' 
+  #' If glm is part of the group then POS and NEG are 
+  #' treated separately.
+  #' 
+  #' @param x table of model fits
+  #' @param ... other arguments for `model_fit_vi`
+  #' @return ggplot heat map
+  
+  v = model_fit_vi(x, ...)
+  
+  if ("Sign" %in% names(v)){
+    v = v |>
+      dplyr::mutate(wflow_id = if_else(is.na(.data$Sign),
+                                       .data$wflow_id,
+                                       paste(.data$wflow_id, .data$Sign))) |>
+      dplyr::select(-Sign)
+  }
+  lvls = rev(v$wflow_id)
+  vl = tidyr::pivot_longer(v,
+                           -dplyr::any_of("wflow_id"),
+                           names_to = "Covariate",
+                           values_to = "Importance",
+                           values_transform = function(x) x/100) |>
+    dplyr::mutate(wflow_id = factor(wflow_id, levels = lvls))
+  
+  ggplot2::ggplot(data = vl,
+                  mapping = ggplot2::aes(x = Covariate,
+                                         y = wflow_id,
+                                         fill = Importance)) +
+    ggplot2::geom_tile() +
+    ggplot2::labs(y = "Workflow ID", 
+                  x = "Covariate")
+  
+  
+  
+}
+
+model_fit_varnames = function(x,
+                              wid = dplyr::pull(x, dplyr::all_of("wflow_id"))[1]){
+
+  #' Retrieve the predictior variable names for a workflow
+  #' @param x table of model fits
+  #' @param wid str the id of the workflow to plot (wflow_id)
+  #' @return string vector of predictor names
+  
+  thisx = x |>
+    dplyr::filter(wflow_id == wid) 
+  thisx$.workflow[[1]] |>
+    workflowsets::extract_preprocessor() |>
+      summary() |>
+      dplyr::filter(role == "predictor") |>
+      dplyr::pull(var = 1)
+}
+
+model_fit_spec <- function(x){
+  
+  #' Retrieve the model specifications for one or more model fits
+  #' 
+  #' @param x workflow set table
+  #' @return str vector of first element of class attribute of each workflowset
+  
+  x |>
+    dplyr::rowwise() |>
+    dplyr::group_map(
+      function(row, key){
+        workflows::extract_spec_parsnip(row$.workflow[[1]]) |> 
+          attr("class") |>
+          getElement(1)
+      }) |>
+    unlist()
 }
 
 

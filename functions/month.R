@@ -5,6 +5,7 @@ month_lut = function(){
   #' 
   #' @return named vector of month numbers
   seq_along(month.abb) |>
+    as.numeric() |>
     rlang::set_names(month.abb)  
 }
 

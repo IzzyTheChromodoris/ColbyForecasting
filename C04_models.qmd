@@ -28,12 +28,17 @@ source("setup.R")
 
 # Load data - choose a month and sampling approach
 
-Let's load what we need to build a model" the configuration and the covariate data.  Notice that we select the covariates that are included in our configuration plus "class".
+Let's load what we need to build a model" the configuration and the complete covariate data.  Notice that we (a) transform month to a simple numeric value (it's easier to work with as a number) and (b) select the covariates that are included in our configuration plus "class".
+
+You may also catch that we log scale `depth` and `Xbtm`.  This reduces the numeric range of each to be more comparable to those of the other covariates. This is a common trick when dealing with data that ranges over orders of magnitude compared to companion data.
 
 
 ```{r load_data}
 cfg = read_configuration(scientificname = "Mola mola", version = "v1")
-model_input = read_model_input(scientificname = "Mola mola", version = "v1") |>
+model_input = read_model_input(scientificname = "Mola mola", 
+                               version = "v1",
+                               log_me = c("depth", "Xbtm")) |>
+  dplyr::mutate(month = month_as_number(.data$month)) |>
   select(all_of(c("class", cfg$keep)))
 ```
 
@@ -106,37 +111,6 @@ summary(rec)
 
 Each variable in the input is assigned a role: "outcome", "coords" or "predictor".  The latter are the variables used in the creation of the model. There are other types of roles, (see `?recipe`) including "case_weight" and "ID", and others can be defined as needed. Some are used in building the model, others are simply ride along and don't change the model outcome.
 
-## Modifying the recipe with steps
-
-Steps are cumulative modifications, and that means the order in which they are added matters. These steps comprise the bulk of pre-processing steps.
-
-Some modifications are applied row-by-row. For example, rows of the input modeling data that have one or more missing values (NAs) can be problematic and they should be removed.
-
-Other modifications are to manipulate entire columns. Sometimes the recipes requires subsequent steps *before* the modeling begins in earnest. For example we know from experience that it is often useful to log scale (base 10) depth when working with biological models. If `depth` and `Xbtm` have made it this far, you'll note that each range over 4 or more orders of magnitude. That's not a problem by itself, but it can introduce a bias toward larger values whenever the mean is computed. So, we'll add a step for log scaling these, but only if `depth` and `Xbtm` have made it this far (this may vary by species.)
-
-```{r step_log}
-rec = rec |> 
-  step_naomit()
-if ("depth" %in% cfg$keep_vars){
-  rec = rec |>
-    step_log(depth,  base = 10)
-}
-if ("Xbtm" %in% cfg$keep_vars){
-  rec = rec |>
-    step_log(Xbtm,  base = 10)
-}
-rec
-```
-We also need to handle factored covariates, like `month` might factored.  We do so by building in an automated conversion to numeric values.  Oddly, the step function is called `step_dummy()` which simply transforms the month column into a series of columns `Jan`, `Feb`,..., `Dec` where each row's value is 1 for the row's month and 0 for all the other months.
-
-```{r step_dummy_month}
-if ("month" %in% cfg$keep_vars){
-  rec = rec |>
-    step_dummy(month)
-}
-rec
-```
-
 # Create a workflow
 
 [workflows](https://workflows.tidymodels.org/) are containers for storing the pre-processing steps and model specifications.  Not too long ago it was quite a challenge to to keep track of all the bits and pieces required to make good forecasts. The advent of `workflows` greatly simplifies the process.  A `workflow` will house two important items for us: a list if preprocesssor items like recipes and a list of desired models.  
@@ -151,17 +125,48 @@ We haven't discussed which kinds of models to use in any detail, so we'll just p
  
  + maxent: [maximum entropy](https://en.wikipedia.org/wiki/Principle_of_maximum_entropy)
  
-For each model type there is a convenient species distribution model specification (`sdm_spec_*`) version designed to handle spatial data. It is here that we specify the hyperparameters to tune.  In general we accept the defaults, but for `random_forest` we ask that we include tuning on the number of trees, too.
+It is here that we specify the hyperparameters to tune.  In general we accept the defaults, but for `random_forest` we ask that we include tuning on the number of trees, too.
 
 ```{r make_workflow}
 wflow = workflow_set(
-  preproc = list(default = rec),
-  models = list(
-      glm = sdm_spec_glm(),
-      rf = sdm_spec_rf(trees = tune()), #<-- tune sdm defaults plus trees
-      gbm = sdm_spec_boost_tree(), 
-      maxent = sdm_spec_maxent()) 
+  
+  preproc = list(default = rec), # not much happening in our preprocessor
+  
+  models = list(                 # but we have 4 models to add
+    
+      # very simple - nothing to tune
+      glm = logistic_reg(
+          mode = "classification") |>
+        set_engine("glm"),
+      
+      # two knobs to tune
+      rf = rand_forest(
+          mtry = tune(),
+          trees = tune(),
+          mode = "classification") |>
+        set_engine("ranger", 
+                   importance = "impurity"),
+      
+      # so many things to tune!
+      btree = boost_tree(
+          mtry = tune(), 
+          trees = tune(), 
+          tree_depth = tune(), 
+          learn_rate = tune(), 
+          loss_reduction = tune(), 
+          stop_iter = tune(),
+          mode = "classification") |>
+        set_engine("xgboost"),
+    
+      # just two again
+      maxent = maxent(
+          feature_classes = tune(),
+          regularization_multiplier = tune(),
+          mode = "classification") |>
+        set_engine("maxnet")
+  )
 )
+wflow
 ```
 
 That's it! Of course, it's just a container of our goodies. Really, it has not done anything other than a few checks.
@@ -191,9 +196,9 @@ In order to figure out the best values to set these parameters to we actually va
 
 ### Iterate to find various hyperparameter sets
 
-Next, we will deploy a function that will take each recipe-model combination and iterator over each of the many-many-many folds (well, 5 in our case) while adjusting the parameters (if any can be adjusted). The results of each iteration will be tracked so we can get a sense of the range and average.  And then we'll run each of those iterations three times and come up with an average for each.  Imagine that this is like a team of minions, each armed with a recipe and model, directing other minions to run the model fitting on each fold.  We are only setting up a grid of 3, which is fine for our class but in practice might be a much higher number.  A systematic and exhaustive "grid" approach works well for small cases, but it can become unwieldy. Other approaches include random sampling and other techniques to lower the computational burden.
+Next, we will deploy a function that will take each recipe-model combination and iterator over each of the many-many-many folds (well, 5 in our case) while adjusting the parameters (if any can be adjusted). The results of each iteration will be tracked so we can get a sense of the range and average.  And then we'll run each of those iterations three times and come up with an average for each.  Imagine that this is like a team of minions, each armed with a recipe and model, directing other minions to run the model fitting on each fold.  We are only setting up a grid of 3, which is fine for our class but in practice might be a much higher number.  A systematic and exhaustive "grid" approach works well for small cases, but it can become unwieldy. Other approaches include random sampling and other techniques to lower the computational burden.  Depending upon the number of models and how many hyperparamters there are this step can take a while.
 
-```{r fit}
+```{r fit, warning = FALSE}
 wflow <- wflow |>
   workflow_map("tune_grid",
     resamples = cv_tr_data, 
@@ -201,11 +206,11 @@ wflow <- wflow |>
     metrics = metrics, 
     verbose = TRUE)
 ```
-Here's a quick plot of the outputs, with each metruic being showcased.
+Here's a quick plot of the outputs, with each metric being showcased.
 ```{r plot_wflow}
 autoplot(wflow)
 ```
-Note that "default_glm" only has one result rather than three.  That is because there are no hyperparameters to tune in general linearized models.
+Note that "default_glm" (here listed as "logistic_reg") only has one result rather than three.  That is because there are no hyperparameters to tune in general linearized models.
 
 
 ### Choose the best set of hyperparameters for each model
@@ -221,7 +226,42 @@ model_fits
 So we get back 4 models (that's good).  Let's look at the random forest and pick out the `.metrics`, `.predictions` and `.workflow` columns.  Note that the leading `.` is simply there to let you you that these parts were derived in the `selectomatic` function.  
 
 
-### Exploring a single model fit result
+## Exploring the collection of model fit results
+
+We can make simple collective representations of the fitted models.
+
+### A table of metrics
+
+We can quickly pull together summary statistics.
+
+```{r model_fit_metrics}
+model_fit_metrics(model_fits)
+```
+
+### Confusion matrices and accuracy
+
+We can plot confusion matrices and add accuracy. Accuracy is the proportion of the data that are predicted correctly.  Of course, we would love to see each of these models achieve perfect accuracy, but that is the nature of modeling. 
+
+```{r model_fit_confmat}
+model_fit_confmat(model_fits)
+```
+### ROC/AUC
+
+We can collate plots of Receiver Operator Curves (ROC) from which the Area Under the Curve (AUC) is computed.
+
+```{r model_fit_roc_auc}
+model_fit_roc_auc(model_fits)
+```
+
+### Variable importance
+
+Variable importance can tell us about the contribution each covariate variable makes toward the whole.  It doesn't compare between models, just within a given model.  Reading the heatmap below scans a given model's row.  For instance, `MLD` and `SST` seem to have equally high importance for `default_rf` (random forest) compared to the other covariates.
+
+```{r model_fit_vip}
+model_fit_vip(model_fits)
+```
+
+## Exploring a single model fit result
 
 Let's pull out one of the model fits and look at it's parts.
 
@@ -243,7 +283,7 @@ autoplot(rf$splits[[1]])
 
 These are simply the metrics associated with the best set of hyperparameters. We can see the aggregate of the "pre-selection" metrics in the metrics plot earlier.
 
-```{r metrics}
+```{r rf_metrics}
 rf$.metrics[[1]]
 ```
 
@@ -263,40 +303,18 @@ The workflow is the encapsulation of the model formula form the recipe, the tune
 rf$.workflow[[1]]
 ```
 
-### Exploring the collection of model fit results
 
-We can make simple collective representations of the models.
 
-#### A table of metrics
-
-We can quickly pull together summary statistics.
-
-```{r model_fit_metrics}
-model_fit_metrics(model_fits)
-```
-
-#### Confusion matrices and accuracy
-
-We can plot confusion matrices and add accuracy.
-
-```{r model_fit_confmat}
-model_fit_confmat(model_fits)
-```
-And finally we can collate plots of Receiver Operator Curves (ROC) from which the Area Under the Curve (AUC) is computed.
-
-```{r model_fit_roc_auc}
-model_fit_roc_auc(model_fits)
-```
 ### Partial dependence plot
 
 Partial dependence reflects the relative contribution of each variable influence over it's full range of values.  The output is a grid grid of plots showing the relative distribution of the variable (bars) as well as the relative influence of the variable (line). 
 ```{r pd_plot}
-model_fit_pdp(model_fits, id = "default_glm")
+model_fit_pdp(model_fits, wid = "default_btree", title = "Boosted Tree")
 ```
 
 # Recap
 
-We have built 4 tyoes of models using tools from the [tidymodels universe](https://www.tidymodels.org/).  After reading in a suite of data, we split our data into training and testing sets, withholding the testing set until the very end.  We looked a variety of metrics including a confusion matrix, ROC and AUC, accuracy and partial dependencies.  We saved the recipe and model together in a special container, called a workflow set, to a file.
+We have built 4 types of models using tools from the [tidymodels universe](https://www.tidymodels.org/).  After reading in a suite of data, we split our data into training and testing sets, withholding the testing set until the very end.  We looked a variety of metrics including a confusion matrix, ROC and AUC, accuracy and partial dependencies.  We saved the recipe and model together in a special container, called a workflow set, to a file.
 
 # Coding Assignment
 

@@ -41,9 +41,9 @@ metrics_table = function(wf_set,
   # call recursively one id at a time
   if (length(wflow_id) > 1){
     rr = sapply(wflow_id,
-           function(id){
-             metrics_table(wf_set, id, what = what) |>
-               dplyr::mutate(wflow_id = id, .before = 1)
+           function(wid){
+             metrics_table(wf_set, wid, what = what) |>
+               dplyr::mutate(wflow_id = wid, .before = 1)
            }, simplify = FALSE) |>
       dplyr::bind_rows()
     return(rr)
