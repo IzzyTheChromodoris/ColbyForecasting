@@ -1,7 +1,4 @@
 
-read_observations = function(scientificname = "Mola mola",
-                             minimum_year = 1970, 
-                             ...){
   
   #' Read raw OBIS data and then filter it
   #' 
