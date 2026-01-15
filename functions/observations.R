@@ -1,4 +1,8 @@
 
+
+read_observations = function(scientificname = "Cetorhinus Maximus",
+                             minimum_year = 1970, 
+                             ...){
   
   #' Read raw OBIS data and then filter it
   #' 

@@ -25,7 +25,7 @@ As always, we start by running our setup function. Start RStudio/R, and relaod y
 
 ```{r source_setup, warning = FALSE}
 source("setup.R")
-SPECIES = "Mola mola"
+SPECIES = "Cetorhinus Maximus"
 ```
 
 # Observations
@@ -215,7 +215,7 @@ So, we dropped `{r} dropped_records` records which is about `{r} sprintf("%0.1f%
 
 # Recap
 
-We have explored a data set, in particular for *Mola mola*; your species may present you with unique challenges. Our goal is to winnow the original data set down to just the most reliable observations for modeling.  
+We have explored a data set, in particular for *Mola Mola*; your species may present you with unique challenges. Our goal is to winnow the original data set down to just the most reliable observations for modeling.  
 
 # Coding Assignment
 
