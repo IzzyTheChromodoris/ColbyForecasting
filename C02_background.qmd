@@ -54,6 +54,20 @@ all_counts = count(st_drop_geometry(obs), month) # counting is faster without sp
 all_counts
 ```
 
+   month     n
+   <fct> <int>
+ 1 Jan       3
+ 2 Feb       9
+ 3 Mar      15
+ 4 Apr     485
+ 5 May    1582
+ 6 Jun    2932
+ 7 Jul    1342
+ 8 Aug     740
+ 9 Sep     263
+10 Oct     248
+11 Nov      71
+12 Dec      11
 Now we can construct the plot.  Note that layering of data, then the coast then the extra text.  Also, we use alpha (aka 'transparency' or 'opacity') blending to make the plotting symbols slightly transparent which reveals overlapping points nicely.  
 
 ```{r all_observations}
@@ -68,6 +82,8 @@ ggplot() +
   labs(x = "Longitude", y = "Latitude", title = "All observations") +
   facet_wrap(~month)
 ```
+
+
 
 Some of those points are densely distributed depending upon the month.  In fact, it may be that we have multiple points in each raster cell in our Brickman data.  We have a function to help use reduce "thin" the observations so that we have just one observation per cell.
 
@@ -100,6 +116,7 @@ ggplot() +
   facet_wrap(~month)
 ```
 
+
 ## Weighted sampling
 
 We now have thinned the observations to just `r nrow(thinned_obs)` records compared to the original `r nrow(obs)` observations. So that get us to no more than 1 observation to cell.  But do we loose the importance of clustered observations?  Isn't meaningful ecologically that the species is found in clusters?  The answers to those are **yes** and **yes**.
@@ -115,6 +132,9 @@ ggplot() +
   geom_sf(data = coast, col = "orange") + 
   labs(x = "Longitude", y = "Latitude", title = "Bias map using all observations")
 ```
+
+
+
 Depending upon your distribution, the clustering may be more or less apparent.  For *Mola mola* it's dominated by a wide even spread with a few "peak" spots.
 
 ## Randomly sample background points
@@ -130,6 +150,8 @@ nback_avg = mean(all_counts$n) |>
   round()
 nback_avg
 ```
+
+[1] 642
 
 So, here we go.  We shall use the [`sapply` iterator](https://bigelowlab.github.io/handytandy/iterations.html) to step through each month. For each month we'll use the thinned observations and the annual bias map to sample for background. At the end we'll have a list of monthly tables which we'll bind into one giant table, and we'll refresh the month column to be a factor (of monthly groupings of course!)
 
@@ -148,12 +170,45 @@ obsbkg = sapply(month.abb,
 obsbkg 
 ```
 
+Simple feature collection with 10969 features and 2 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: -73.667 ymin: 38.8414 xmax: -65.07169 ymax: 45.13174
+Geodetic CRS:  WGS 84
+# A tibble: 10,969 × 3
+   month class                  geometry
+ * <fct> <fct>               <POINT [°]>
+ 1 Jan   presence   (-68.65083 43.09529)
+ 2 Jan   presence     (-67.0988 45.0853)
+ 3 Jan   background (-68.31059 41.92346)
+ 4 Jan   background  (-68.9687 42.99289)
+ 5 Jan   background  (-72.8351 40.27818)
+ 6 Jan   background  (-70.7785 40.85403)
+ 7 Jan   background (-70.03813 42.33478)
+ 8 Jan   background (-71.76567 40.03139)
+ 9 Jan   background (-69.46228 41.34761)
+10 Jan   background (-69.46228 41.75893)
+
 A quick tally of the class by month confirms that our `nback_avg` of `r nback_avg` points is used consistently every month.
 
 ```{r nback_avg}
 # drop the spatial baggage to speed the tally
 count(st_drop_geometry(obsbkg), month, class)
 ```
+
+# A tibble: 24 × 3
+   month class          n
+   <fct> <fct>      <int>
+ 1 Jan   presence       2
+ 2 Jan   background   642
+ 3 Feb   presence       8
+ 4 Feb   background   642
+ 5 Mar   presence      12
+ 6 Mar   background   642
+ 7 Apr   presence     181
+ 8 Apr   background   642
+ 9 May   presence     667
+10 May   background   642
 
 Let's see where these presence/background points fall relative to each other.
 
@@ -169,6 +224,7 @@ ggplot() +
   facet_wrap(~month)
 
 ```
+
 
 These would be the data locations we feed into the model.  So is that reasonable solution? At first glance it seems to be, so we'll choose this background sampling approach; thinning with biased sampling. We can't know if another approach might be better until we actually start modeling.
 
