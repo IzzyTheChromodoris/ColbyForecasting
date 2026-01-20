@@ -32,6 +32,25 @@ db = brickman_database() |>
 present = read_brickman(db)
 ```
 
+stars object with 3 dimensions and 8 attributes
+attribute(s):
+               Min.      1st Qu.       Median         Mean      3rd Qu.         Max.  NA's
+MLD    1.011275e+00  5.583339810 15.967359543 18.910421492 2.809953e+01 106.69815063 59796
+Sbtm   2.324167e+01 32.136343956 34.232215881 33.507147254 3.491243e+01  35.15741730 59796
+SSS    1.644333e+01 30.735633373 31.104771614 31.492407921 3.203519e+01  35.59160995 59796
+SST   -7.826599e-01  6.434107542 12.359498501 12.151707840 1.763068e+01  26.43147278 59796
+Tbtm  -2.676387e-01  3.595118523  6.110801697  6.122372065 7.521761e+00  24.60999298 59796
+U     -2.121380e-01 -0.010892980 -0.002634738 -0.010139401 7.229637e-04   0.07469980 59796
+V     -1.883337e-01 -0.010722862 -0.002858645 -0.008474233 9.565173e-04   0.05264002 59796
+Xbtm   3.275602e-06  0.001458065  0.003088348  0.008360344 7.256525e-03   0.18996811 59796
+dimension(s):
+      from  to offset    delta refsys point      values x/y
+x        1 121 -74.93  0.08226 WGS 84 FALSE        NULL [x]
+y        1  89  46.08 -0.08226 WGS 84 FALSE        NULL [y]
+month    1  12     NA       NA     NA    NA Jan,...,Dec    
+
+
+
 ## Make a `pairs` plot
 
 A `pairs` plot is a plot often used in exploratory data analysis.  It makes a grid of mini-plots of a set of variables, and reveals the relationships among the variables pair-by-pair.  It's easy to make.
@@ -61,7 +80,8 @@ Of course, we can decide to ignore this advice, and pick which ever ones we want
 ```{r add_depth_and_month}
 keep = c("depth", "month", keep)
 ```
-
+ [1] "depth" "month" "depth" "month" "depth" "month" "SSS"   "U"     "Sbtm"  "V"     "Tbtm" 
+[12] "MLD"   "SST"
 Whatever selection of variables we decide to model with, we will save this listing to a file.  That way we can refer to it programmatically, but that comes later.
 
 ## A closer look at the model input data
