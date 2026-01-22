@@ -46,10 +46,32 @@ obs2 = obs2 |>
 summary(obs2)
 ```
 
-```{r}
-obs2= obs2 |>
-  filter(!is.na(individualCount))
-summary(obs2)
+The next part is making graphs 
+
+```{r plot_month}
+ggplot(data = obs2,
+       mapping = aes(x = month)) + 
+  geom_bar() + 
+  labs(title = "Counts per month")
 ```
 
 
+```{r}
+SPECIES3= "Calanus finmarchicus"
+fetch_obis(SPECIES3)
+```
+```{r}
+obs3=read_obis(SPECIES3)
+obs3
+```
+
+```{r plot_year}
+ggplot(data = obs3,
+       mapping = aes(x = year)) + 
+  geom_bar() + 
+  geom_vline(xintercept = c(1982, 2013), linetype = "dashed") + 
+  labs(title = "Counts per year")
+```
+
+
+`source("/home/<IzzyTheChromodoris>/<ColbyForecasting_data>/setup.R")`
