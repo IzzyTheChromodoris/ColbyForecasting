@@ -7,71 +7,42 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+source("/home/isgott28/ColbyForecasting/setup.R")
 ```
 
-## GitHub Documents
+There will be two species, the Right Whale, which shares a 
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
-
-## Including Code
-
-You can include R code in the document as follows:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r}
+```{r,echo=FALSE}
 SPECIES2="Eubalaena glacialis"
-fetch_obis(SPECIES2)
-```
-
-```{r}
-obs2=read_obis(SPECIES2)
+obs2=read_observations(SPECIES2)
 obs2
 ```
-```{r}
-obs2 = obs2 |>
-  filter(!is.na(eventDate))
-summary(obs2)
-```
 
-The next part is making graphs 
+Here is the plot for the months:
 
-```{r plot_month}
+```{r plot_month2,echo=FALSE}
 ggplot(data = obs2,
        mapping = aes(x = month)) + 
   geom_bar() + 
-  labs(title = "Counts per month")
+  labs(title = "Counts per month for Right Whales")
 ```
 
-
-```{r}
+```{r,echo=FALSE}
 SPECIES3= "Calanus finmarchicus"
-fetch_obis(SPECIES3)
-```
-```{r}
-obs3=read_obis(SPECIES3)
+obs3=read_observations(SPECIES3)
 obs3
 ```
 
-```{r plot_year}
+```{r plot_year,warning=FALSE,echo=FALSE}
 ggplot(data = obs3,
        mapping = aes(x = year)) + 
   geom_bar() + 
   geom_vline(xintercept = c(1982, 2013), linetype = "dashed") + 
-  labs(title = "Counts per year")
+  labs(title = "Counts per year for Calanus finmarchicus")
 ```
-
-
-`source("/home/<IzzyTheChromodoris>/<ColbyForecasting_data>/setup.R")`
+```{r plot_month3,echo=FALSE}
+ggplot(data = obs3,
+       mapping = aes(x = month)) + 
+  geom_bar() + 
+  labs(title = "Counts per month for C.fin")
+```
