@@ -3,7 +3,7 @@ C03_assignment.Rmd
 Izzy Gottlieb
 2026-01-20
 
-There will be two species, the Right Whale, which shares a
+<!-- There will be two species, the Right Whale, which shares a favorite food with the Basking Shark. The second creature is the favorite food in question.  -->
 
     ## Simple feature collection with 3872 features and 7 fields
     ## Geometry type: POINT
@@ -26,7 +26,7 @@ There will be two species, the Right Whale, which shares a
     ## # ℹ 3,862 more rows
     ## # ℹ 1 more variable: geom <POINT [°]>
 
-Here is the plot for the months:
+<!-- Here is the plot for the months. It looks like Right Whales prefer the spring.  -->
 
 ![](C03-assignment-IZZY_files/figure-gfm/plot_month2-1.png)<!-- -->
 
@@ -50,6 +50,8 @@ Here is the plot for the months:
     ## 10 000e05a0-c67f… HumanObserva… 2016-07-27  2016 Jul   <NA>                   NA
     ## # ℹ 43,629 more rows
     ## # ℹ 1 more variable: geom <POINT [°]>
+
+<!-- Here are the counts for both the year and month for Calanus finmarchicus, the creature which both the Basking Shark and Right Whale. -->
 
 ![](C03-assignment-IZZY_files/figure-gfm/plot_year-1.png)<!-- -->
 ![](C03-assignment-IZZY_files/figure-gfm/plot_month3-1.png)<!-- -->

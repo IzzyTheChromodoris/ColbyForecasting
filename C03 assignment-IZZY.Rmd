@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 source("/home/isgott28/ColbyForecasting/setup.R")
 ```
 
-There will be two species, the Right Whale, which shares a 
+<!-- There will be two species, the Right Whale, which shares a favorite food with the Basking Shark. The second creature is the favorite food in question.  -->
 
 ```{r,echo=FALSE}
 SPECIES2="Eubalaena glacialis"
@@ -18,7 +18,7 @@ obs2=read_observations(SPECIES2)
 obs2
 ```
 
-Here is the plot for the months:
+<!-- Here is the plot for the months. It looks like Right Whales prefer the spring.  -->
 
 ```{r plot_month2,echo=FALSE}
 ggplot(data = obs2,
@@ -32,7 +32,7 @@ SPECIES3= "Calanus finmarchicus"
 obs3=read_observations(SPECIES3)
 obs3
 ```
-
+<!-- Here are the counts for both the year and month for Calanus finmarchicus, the creature which both the Basking Shark and Right Whale. -->
 ```{r plot_year,warning=FALSE,echo=FALSE}
 ggplot(data = obs3,
        mapping = aes(x = year)) + 

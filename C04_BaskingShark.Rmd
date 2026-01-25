@@ -1,0 +1,87 @@
+---
+title: "C04_assignment.Rmd"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("/home/isgott28/ColbyForecasting/setup.R")
+```
+
+<!-- Cetorhinus Maximus is the Basking Shark, the second largest shark in the world. Like the first largest shark, the Whale Shark, the Basking Shark is a filter feeder.  -->
+
+```{r load_data,echo=FALSE}
+SPECIES= "Cetorhinus Maximus"
+cfg = read_configuration(scientificname = SPECIES, version = "v1")
+model_input = read_model_input(scientificname = SPECIES, 
+                               version = "v1",
+                               log_me = c("depth", "Xbtm")) |>
+  dplyr::mutate(month = month_as_number(.data$month)) |>
+  select(all_of(c("class", cfg$keep)))
+```
+
+
+```{r initial_split,echo=FALSE}
+model_input_split = spatial_initial_split(model_input, 
+                        prop = 1 / 5,     # 20% for testing
+                        strategy = spatial_block_cv) # see ?spatial_block_cv
+model_input_split
+```
+
+
+```{r initial_split_plot,echo=FALSE}
+autoplot(model_input_split)
+```
+<!-- There aren't a lot of Basking Shark data due to their mysteriousness. Wikipedia claims that the female basking sharks can only use one of their ovaries. Not sure why. And nobody really knows their migration patterns or the full extent of their basic biology and ecology. That is why understanding Basking Sharks , even if it is just in the Gulf of Maine, is so important.  -->
+
+```{r cv_training,echo=FALSE}
+tr_data = training(model_input_split)
+cv_tr_data <- spatial_block_cv(tr_data,
+  v = 5,     
+  cellsize = grid_cellsize(model_input),
+  offset = grid_offset(model_input) + 0.00001
+)
+autoplot(cv_tr_data)
+```
+<!-- The Basking Shark eats microscopic creatures. They share a favorite food with the Right Whale. -->
+
+```{r plot_wflow,echo=FALSE}
+autoplot(wflow)
+```
+
+```{r model_fit_confmat,echo=FALSE}
+model_fit_confmat(model_fits)
+```
+
+```{r model_fit_roc_auc,echo=FALSE}
+model_fit_roc_auc(model_fits)
+```
+
+```{r rf_splits,echo=FALSE}
+autoplot(rf$splits[[1]])
+```
+
+
+```{r rf_metrics,echo=FALSE}
+rf$.metrics[[1]]
+```
+
+
+
+```{r rf_preds,echo=FALSE}
+rf$.predictions[[1]]
+```
+
+
+
+```{r rf_workflow,echo=FALSE}
+rf$.workflow[[1]]
+```
+
+
+```{r pd_plot,echo=FALSE}
+model_fit_pdp(model_fits, wid = "default_btree", title = "Boosted Tree")
+```
+
+
+
