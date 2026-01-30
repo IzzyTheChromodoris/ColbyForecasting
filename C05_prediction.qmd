@@ -20,7 +20,7 @@ source("setup.R")
 We are going to make a prediction about the present, which means it something akin to a [nowcast](https://en.wikipedia.org/wiki/Nowcasting_(economics)). 
 
 ```{r load_covar}
-cfg = read_configuration(scientificname = "Mola mola",
+cfg = read_configuration(scientificname = "Cetorhinus Maximus",
                          version = "v1", 
                          path = data_path("models"))
 db = brickman_database()
@@ -36,7 +36,7 @@ present_conditions = read_brickman(db |> filter(scenario == "PRESENT",
 We read the model information we created last time.
 
 ```{r load_workflow}
-model_fits = read_model_fit(filename = "Mola_mola-v1-model_fits")
+model_fits = read_model_fit(filename = "Cetorhinus_Maximus-v1-model_fits")
 model_fits
 ```
 

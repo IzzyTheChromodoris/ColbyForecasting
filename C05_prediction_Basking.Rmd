@@ -1,5 +1,6 @@
 ---
 title: "Prediction"
+output: github_document
 ---
 
 > It's tough to make predictions, especially about the future.
@@ -80,15 +81,11 @@ plot_prediction(forecast_2075['default_btree'])
 ```
 
 
-:::{.callout-note}
-Don't forget that [there are other ways](https://github.com/BigelowLab/ColbyForecasting/wiki/Spatial) to plot array based spatial data.
-:::
-
 ## Save the predictions
 
 It's easy to save the predictions (and read then back with `read_prediction()`).
 
-```{r save_pred}
+```{r save_pred1}
 # make sure the output directory exists
 path = make_path("predictions")
 
@@ -106,7 +103,7 @@ write_prediction(forecast_2075,
 
 
 
-```{r save_pred}
+```{r save_pred2}
 # make sure the output directory exists
 
 path = make_path("predictions")
@@ -117,7 +114,7 @@ write_prediction(forecast_2075,
                  scenario = "CURRENT")
 ```
 
-```{r save_pred}
+```{r save_pred3}
 # make sure the output directory exists
 path = make_path("predictions")
 write_prediction(forecast_2075,
@@ -130,7 +127,7 @@ write_prediction(forecast_2075,
 
 
 
-```{r save_pred}
+```{r save_pred4}
 path = make_path("predictions")
 write_prediction(forecast_2075,
                  scientificname = cfg$scientificname,
@@ -140,7 +137,7 @@ write_prediction(forecast_2075,
 ```
 
 
-```{r save_pred}
+```{r save_pred5}
 path = make_path("predictions")
 write_prediction(forecast_2075,
                  scientificname = cfg$scientificname,
@@ -150,7 +147,7 @@ write_prediction(forecast_2075,
 ```
 
 
-```{r save_pred}
+```{r save_pred6}
 path = make_path("predictions")
 write_prediction(forecast_2075,
                  scientificname = cfg$scientificname,
@@ -164,8 +161,8 @@ We made both a nowcast and a predictions using previously saved model fits. Cont
 
 # Coding Assignment
 
-::: {.callout-note appearance="simple"}
+
 For each each climate scenario create a monthly forecast (so that's three time periods: PRESENT, 2055 and 2075 and three scenarios CURRENT, RCP45, RCP85) and save each to in your `predictions` directory.  In the end you should have 5 files saved (one for PRESENT and two each for 2055 and 2075).
 
 Do the same for your second species.  Ohhh, perhaps this a good time for another R markdown or R script to keep it all straight?
-:::
+
