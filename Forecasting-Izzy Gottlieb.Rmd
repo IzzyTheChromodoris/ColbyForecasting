@@ -1,0 +1,168 @@
+---
+title: "Forecasting Cetorhinus Maximus"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("/home/isgott28/ColbyForecasting/setup.R")
+```
+
+Introduction
+
+Cetorhinus Maximus, or The Basking Shark, is the second-largest species of shark in the world. This species feeds on zooplankton such as copepods in the Genus Calanus. Not much is currently known about Basking Sharks, such as their migratory patterns and behavior (Westgate et al., March 10). Understanding this is important when making decisions about conservation. For one, the Basking Shark drifts with the currents, feeding through 'filters.' They rely on high density of food to survive. Because climate change has potentially disrupted the distribution of this prey, many creatures have been impacted, including the Right Whale. Understanding the behavior of the prey can help understand the behavior of the predator, and with a species that isn’t as well studied as the Basking Shark, this information can be crucial to understand how to combat climate change.Like many sharks, the Basking Shark has been hunted for their liver oil, skin leather, and flesh. An unexpected consequence of forecasting a species with inconsistent migratory patterns is that people who hunt these animals now have a method of tracking them easier.Hopefully this data and others like it in the future can be used for awareness in critically impacted habitats.
+
+DATA
+
+According to the data from Obis, Basking Sharks prefer warmer temperatures, between 8-15 degrees celcius ().
+```{r summer_distrib,echo=FALSE}
+
+obs = read_observations() |>
+  mutate(month = factor(month, levels = month.abb))
+
+ggplot(data = obs,
+       mapping = aes(x = month)) + 
+  geom_bar() + 
+  labs(title = "Counts per month")
+```
+Figure 1: The numbers of Basking Sharks over a normal year. Notice that the majority of the sharks are seen between the months of April and August, with a majority in June. 
+```{r plot_month3,echo=FALSE}
+SPECIES3= scientificname= Calanus finmarchicus
+obs3 = read_obis(SPECIES3)
+obs3 |>
+  filter(is.na(individualCount)) |>
+  slice(1) |>
+  browse_obis()
+obs3 = obs3 |>
+  filter(!is.na(individualCount))
+ggplot(data = obs3,
+       mapping = aes(x = month)) + 
+  geom_bar() + 
+  labs(title = "Counts per month: Calanus finmarchicus")
+```
+Figure 2: The same monthly distribution but looking at Calanus Finmarchicus, a copepod prey animal for the Basking Shark and the Right Whale(Camille H. Ross et al, 2021). Unfortunatly this doesn't give us enough information. If the prey only appeared in specific months, then we could have compared boating statistics or other variables to decide what specifically is impacting the sharks, and thus understanding what would become of them in the future.
+```{r load_obs_mask,echo=FALSE}
+coast = read_coastline()
+obs = read_observations(scientificname = "Cetorhinus Maximus")
+db = brickman_database() |>
+  filter(scenario == "STATIC", var == "mask")
+mask = read_brickman(db)
+LON0 = -67
+LAT0 = 46
+all_counts = count(st_drop_geometry(obs), month)
+
+thinned_counts = count(st_drop_geometry(thinned_obs), month)
+
+ggplot() +
+  geom_sf(data = thinned_obs, 
+          alpha = 0.2, 
+          shape = "circle small", 
+          size = 1) +
+  geom_sf(data = coast, col = "orange") +
+  geom_text(data = thinned_counts,
+            mapping = aes(x = LON0, 
+                          y = LAT0, 
+                          label = sprintf("n: %i", .data$n)),
+                          size = 3) + 
+  labs(x = "Longitude", y = "Latitude", title = "Thinned observations") +
+  facet_wrap(~month)
+
+```
+Figure 3: A visualization of where the Basking Sharks are located and when.The data has been thinned. 
+```{r bias_map,echo=FALSE}
+bias_map = rasterize_point_density(obs, mask) 
+
+ggplot() +
+  geom_stars(data = bias_map, aes(fill = count)) +
+  scale_fill_viridis_b(na.value = "transparent") +
+  geom_sf(data = coast, col = "orange") + 
+  labs(x = "Longitude", y = "Latitude", title = "Bias map using all observations")
+```
+Figure 4: Bias map of all observations. A majority of the sightings appear to be located in a central area. It is unknown why, but that is why I will be looking at covariables that might influence their range. 
+```{r read_brickman, echo=FALSE,warning = FALSE}
+db = brickman_database() |>
+  dplyr::filter(scenario == "PRESENT", interval == "mon")
+present = read_brickman(db)
+pairs(present)
+keep = filter_collinear(present, method = "cor_caret", cutoff = 0.65)
+drop_me = attr(keep, "to_remove")
+keep = c("depth", "month", keep)
+model_input = read_model_input(scientificname = "Cetorhinus Maximus")
+present = read_brickman(add = c("depth"))
+variables = extract_brickman(present, model_input, form = "wide")
+variables = variables |>
+  mutate(class = model_input$class) |>   
+  select(-.id)                
+plot_pres_vs_bg(variables |> select(-month), "class")
+```
+Figure 5: The covariables. These results show that a forecast has a high chance of being inaccurate due to the variance of the data. Some data is simple, such as depth revealing that both presence and background class Basking Sharks seem to prefer shallower water with an inconsistent preference in sea surface temperature and a more consistent preference in sea bottom temperature. Although this may seem odd, considering the date on Calanus finmarchicus, it makes sense that a specific predator would spend more time in a location where their prey may have a stronger preference. In relation to Calanus finamarchicus, it has been stated in many studies that they are extremely sensitive to changes in temperatures. (Rubao Ji et al,2017).
+According to projections of the future involving C.finmarchicus based on samples taken between 1977-2013, it is seen that the 
+population of these animals will be dangerously low in the years 2050 and 2075. (“Projected May-June C. finmarchicus density over different time periods and climate scenarios.”- Grieve, B.D. et al 2017)
+
+Forecast
+
+There were two methods of forecasting the presence of Cetorhinus Maximus. While looking at data from Right Whales and Calanus finmarchicus may provide information about prey and potential shared predators, the difference is still clear: Basking Sharks aren't right whales and the data deficiency makes forecasting accuracy decrease. One method is through R-studio with the figure blow: 
+```{r load_data,echo=FALSE}
+cfg = read_configuration(scientificname = "Cetorhinus Maximus", version = "v1")
+model_input = read_model_input(scientificname = "Cetorhinus Maximus", 
+                               version = "v1",
+                               log_me = c("depth", "Xbtm")) |>
+  dplyr::mutate(month = month_as_number(.data$month)) |>
+  select(all_of(c("class", cfg$keep)))
+model_input_split = spatial_initial_split(model_input, 
+                        prop = 1 / 5,     
+                        strategy = spatial_block_cv) 
+autoplot(model_input_split)
+tr_data = training(model_input_split)
+cv_tr_data <- spatial_block_cv(tr_data,
+  v = 5,     
+  cellsize = grid_cellsize(model_input),
+  offset = grid_offset(model_input) + 0.00001
+)
+model_fit_roc_auc(model_fits)
+```
+Unfortunately, the accuracy is still too low to make a prediction. Based on the current trends based on prey and similar predators, in the year 2050, Basking Shark populations will be low. 
+
+As mentioned previously, there was a second method to predicting the distribution of Basking Sharks. Instead of training based on Obis models, I created an AI model only for predicting the future for Cetorhinus maximus. This included using AnythingLLM, Python3, and Ollama to create an AI and then feeding it data from the sources mentioned in this paper, as well as the figures mentioned. Its result is as follows and is cut down slightly for convenience: 
+"“Current and Historical Presence:
+Seasonal Presence: Basking sharks are observed seasonally in the Gulf of Maine and surrounding waters. Peak sightings in May, June, and July, with a noticeable presence from April through October.
+Geographic Distribution: Significant basking shark presence along the coast of Maine, extending south into the broader northeastern United States continental shelf waters, including the Gulf of Maine.
+Aggregations: Large aggregations, though relatively rare compared to individual sightings (89% were single sightings, 99% were groups of seven or fewer), have been documented in summer and autumn months off the northeastern United States, including the Gulf of Maine. The largest recorded aggregation included up to 1398 individuals.
+Environmental Preferences: These aggregations are associated with sea surface temperatures (SSTs) typically ranging from 13 to 24°C and chlorophyll-a (Chl-a) concentrations of 0.4 to 2.6 mg m⁻³. They are linked to dense zooplankton patches, such as Centropages typicus.
+Predicted Presence in the Gulf of Maine in 2050:
+Given the slow recovery rate, historical depletion, and potential impacts of climate change, it is unlikely that the presence of Basking Sharks in the Gulf of Maine will significantly increase by 2050, and their conservation status is likely to remain a concern.
+Key factors influencing this prediction:
+Slow Recovery: Basking sharks have slow growth rates, late maturity, and low productivity, making their populations highly sensitive to exploitation and recovery very slow. The eastern Canadian population is considered depleted.
+Climate Change Impacts on Habitat: The Gulf of Maine is experiencing rapid warming. If SSTs in the region consistently exceed the basking sharks’ preferred range (13–24°C), their distribution could shift northward or to deeper waters. This could potentially reduce their presence in traditional Gulf of Maine foraging grounds.
+Climate Change Impacts on Prey: Basking sharks rely on dense zooplankton blooms for feeding. Climate change can alter oceanographic conditions, impacting the timing, location, and species composition of these zooplankton blooms (e.g., chlorophyll-a concentrations). Disruptions to their primary food source could directly affect their presence and foraging success in the Gulf of Maine.
+Observed Trends: While the “Counts per year” graph shows an increase in recorded sightings from around 2000 to 2015, it also indicates a sharp decline in counts between 2015 and 2020. Without specific data on survey effort, it’s difficult to interpret this solely as a population trend, but it does not suggest a robust, rapidly recovering population.
+In summary, Basking Sharks are likely to continue to be present in the Gulf of Maine during summer and autumn months in 2050, given its historical importance as a foraging ground. However, their abundance is expected to remain low due to inherent biological limitations for recovery and potential shifts in habitat suitability and prey availability driven by ongoing climate change."
+
+Conclusion
+
+The future may be AI, but AI can only go so far with a forecast. As demonstrated in the overview above, the accuracy of an AI is near equivalent to other forms of predicting. In conclusion, there needs to be increased efforts in learning more about these creatures and perhaps understanding variables that may have been overlooked, such as boating routes and whale watching sights. Until then, scientists will celebrate any discovery that may hold the secret to saving the oceans. 
+
+Citations
+
+Andrew J Westgate, Heather N. Koopman, Zach A. Siders, Sarah N.P. Wong, Robert A. Ronconi, Population density and abundance of basking sharks Cetorhinus maximus in the lower bay of Fundy, Canada, Department of Biology and Marine Biology, Volume 23, published online March 10.
+
+Camille H. Ross,  Daniel E. Pendleton,  Benjamin Tupper,  David Brickman,  Monica A. Zani, Charles A. Mayo,  Nicholas R. Record: Projecting regions of North Atlantic right whale, Eubalaena glacialis, habitat suitability in the Gulf of Maine for the year 2050, Collections: Knowledge Domain: Ocean Science , Special Feature: Gulf of Maine 2050: Visioning Regional Resilience and Sustainability, Elementa: Science of the Anthropocene (2021) 9 (1): 00058. Published online April 28,2021. 
+https://doi.org/10.1525/elementa.2020.20.00058
+
+David W. Sims,Chapter 3 Sieving a Living: A Review of the Biology, Ecology and Conservation Status of the Plankton‐Feeding Basking Shark Cetorhinus Maximus, Advances in Marine Biology, Academic Press, Volume 54, 2008, Pages 171-220, ISSN 0065-2881,ISBN 9780123743510,
+https://doi.org/10.1016/S0065-2881(08)00003-5.
+
+Grieve, B.D., Hare, J.A. & Saba, V.S. Projecting the effects of climate change on Calanus finmarchicus distribution within the U.S. Northeast Continental Shelf. Sci Rep 7, 6264 (2017). https://doi.org/10.1038/s41598-017-06524-1
+
+Rubao Ji, Zhixuan Feng, Benjamin T. Jones, Cameron Thompson, Changsheng Chen, Nicholas R. Record, Jeffrey A. Runge, Coastal amplification of supply and transport (CAST): a new hypothesis about the persistence of Calanus finmarchicus in the Gulf of Maine, ICES Journal of Marine Science, Volume 74, Issue 7, September-October 2017, Pages 1865–1874, https://doi.org/10.1093/icesjms/fsw253
+
+Stefán Th Eysteinsson, María Gudjónsdóttir, Sigrún H. Jónasdóttir, Sigurjón Arason, Review of the composition and current utilization of Calanus finmarchicus – Possibilities for human consumption, Trends in Food Science & Technology, Volume 79, 2018, Pages 10-18, ISSN 0924-2244, https://doi.org/10.1016/j.tifs.2018.06.019.
+
+
+
+
+
+
+
+
+
