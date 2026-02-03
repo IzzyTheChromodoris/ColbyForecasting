@@ -90,7 +90,7 @@ ggplot() +
   Figure 3: A visualization of where the Basking Sharks are located and during which months. The data has been thinned to not include NA values. 
   
   Figure 3 proves the observation in Figure 1, so it is clear that the Basking Sharks are seen more frequently in between the months of May and August, with the maximum located in June and the minimum located in January. This matters because it can be compared to the changes in distribution with Calanus finmarchicus. When looking at the northeastern ocean database, changes in the density of C.fin can be seen over spring, summer, fall, and winter between the range of year 2003-2009 and 2010-2021. 
-  (INSERT PICTURES)Figure 3a, 3b, 3c, 3d
+Figure 3a, 3b, 3c, 3d
   
 
 ```{r bias_map,echo=FALSE}
