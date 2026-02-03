@@ -18,31 +18,35 @@ a prediction on the distribution of Basking Sharks in the year 2050 and
 beyond.
 
 DATA and MODELS
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/summer_distrib-1.png)<!-- -->
+
 Figure 1: The numbers of Basking Sharks over a normal year. Notice that
 the majority of the sharks are seen between the months of April and
 August, with a majority in June. This tell us that Basking Sharks prefer
 warmer temperatures, specifically temperatures in the warmer temperate
-regions (Sims,2008). Knowing that Basking Sharks prefer warmer waters
-doesn’t tell us enough about their distribution in the past and future,
-because even if the climate warms, why would the Basking Sharks care? A
-good reason for why this matters is because of prey preferences. First,
-Basking Sharks, like many other filter-feeders, travel along the
-currents and follow their prey. Unlike species that are smaller and
-require less microscopic food to sustain basic functions, the Basking
-Shark requires a high density of plankton in order to survive. Basking
-Sharks, as well as other predators in the area, such as the endangered
-North Atlantic Right Whale, feed on copepods like Calanus finmarchicus
-or C.fin. While Basking Sharks may not have a strict preference in
-temperatures, C.fin do. Warming global temperatures may displace
-populations of this food source and may cause their predators to move
-elsewhere.
+regions (Sims,2008).
+
+Knowing that Basking Sharks prefer warmer waters doesn’t tell us enough
+about their distribution in the past and future, because even if the
+climate warms, why would the Basking Sharks care? A good reason for why
+this matters is because of prey preferences. First, Basking Sharks, like
+many other filter-feeders, travel along the currents and follow their
+prey. Unlike species that are smaller and require less microscopic food
+to sustain basic functions, the Basking Shark requires a high density of
+plankton in order to survive. Basking Sharks, as well as other predators
+in the area, such as the endangered North Atlantic Right Whale, feed on
+copepods like Calanus finmarchicus or C.fin. While Basking Sharks may
+not have a strict preference in temperatures, C.fin do. Warming global
+temperatures may displace populations of this food source and may cause
+their predators to move elsewhere.
 
     ## Please point your browser to the following url:
 
     ## https://api.obis.org/v3/occurrence/0005bdf5-aeb9-4804-b56b-95f98597bffe
 
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/plot_month3-1.png)<!-- -->
+
 Figure 2: The same monthly distribution but looking at Calanus
 finmarchicus.Unfortunatly, this data doesn’t provide enough information
 to determine if there is a preference. If there was a spike in one month
@@ -52,21 +56,31 @@ have been conducted before to determine how temperatures impact the life
 cycle of C.fin. Below is the Individual Base model described in Figure 2
 of the journal article, “Coastal Amplifications of supply and transport
 (CAST): a new hypothesis about the persistence of Calanus finmarchicus
-in the Gulf of Maine.” ![see Ji et al 2017](images/Rubeo.png) In
-addition, there is a range in change in development time in the species
-with an x-value of temperature. It is important to note that as the
-temperature goes up, the development time goes down. This change is seen
-between N3-C5 range, Egg to C5 range, and Egg to Adult range as shown
-below. ![see Ji et al 2017](images/RubeoJi2.png) So now we know that
-prey distribution matters. Next, we shall create graphs for both the
-current distribution of Basking Sharks as well as the distribution of
-Calanus finmarchicus. It is highly unlikely that this alone matters for
-forecasting the future of Cetorhinus maximus. For example, boating
-accidents and poaching may be an important factor as seen with Right
-Whales(Ross et al,.2021).
+in the Gulf of Maine.”
+
+![see Ji et al 2017](images/Rubeo.png) In addition, there is a range in
+change in development time in the species with an x-value of
+temperature. It is important to note that as the temperature goes up,
+the development time goes down. This change is seen between N3-C5 range,
+Egg to C5 range, and Egg to Adult range as shown below.
+
+<figure>
+<img src="images/RubeoJi2.png" alt="see Ji et al 2017" />
+<figcaption aria-hidden="true">see Ji et al 2017</figcaption>
+</figure>
+
+So now we know that prey distribution matters. Next, we shall create
+graphs for both the current distribution of Basking Sharks as well as
+the distribution of Calanus finmarchicus. It is highly unlikely that
+this alone matters for forecasting the future of Cetorhinus maximus. For
+example, boating accidents and poaching may be an important factor as
+seen with Right Whales(Ross et al,.2021).
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/load_obs_mask-1.png)<!-- -->
+
 Figure 3: A visualization of where the Basking Sharks are located and
 during which months. The data has been thinned to not include NA values.
+
 Figure 3 proves the observation in Figure 1, so it is clear that the
 Basking Sharks are seen more frequently in between the months of May and
 August, with the maximum located in June and the minimum located in
@@ -74,13 +88,16 @@ January. This matters because it can be compared to the changes in
 distribution with Calanus finmarchicus. When looking at the northeastern
 ocean database, changes in the density of C.fin can be seen over spring,
 summer, fall, and winter between the range of year 2003-2009 and
-2010-2021. (INSERT PICTURES)Figure 3a, 3b, 3c, 3d
+2010-2021. Figure 3a, 3b, 3c, 3d
 
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/bias_map-1.png)<!-- -->
+
 Figure 4: Bias map of all observations. A majority of the sightings
 appear to be located in a central area. It is unknown why, but that is
 why we will be looking at co-variables that might influence their range.
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/read_brickman-1.png)<!-- -->![](Forecasting-Izzy-Gottlieb_files/figure-gfm/read_brickman-2.png)<!-- -->
+
 Figure 5: The covariables. These results show that a forecast has a high
 chance of being inaccurate due to the variance of the data. Some data is
 simple, such as depth revealing that both presence and background class
@@ -91,17 +108,23 @@ date on Calanus finmarchicus, it makes sense that a specific predator
 would spend more time in a location where their prey may have a stronger
 preference. In relation to Calanus finamarchicus, it has been stated in
 many studies that they are extremely sensitive to changes in
-temperatures. (Rubao Ji et al,2017). ![see Grieve et al
-2017](images/Forecast_CFin.png) According to the above projections based
-on C.fin samples taken between the years 1977-2013, the population of
-the copepods will get progressively low in both RCP 4.5 and RCP 8.5
-figures showing density within the May-June range. The change in density
-with the forecast model is significant and mirrors the changes mentioned
-in the observed density over different seasons and year ranges in
-figures 3a, 3b, 3c, and 3d. The change occuring in the year range
-2003-2009 and 2010-2021 seems similar to the change occurring between
-the year range 2041-2060 and 2081-2100. This shows that both models can
-be reliable since both models predict a downward trend in density.
+temperatures. (Rubao Ji et al,2017).
+
+<figure>
+<img src="images/Forecast_CFin.png" alt="see Grieve et al 2017" />
+<figcaption aria-hidden="true">see Grieve et al 2017</figcaption>
+</figure>
+
+According to the above projections based on C.fin samples taken between
+the years 1977-2013, the population of the copepods will get
+progressively low in both RCP 4.5 and RCP 8.5 figures showing density
+within the May-June range. The change in density with the forecast model
+is significant and mirrors the changes mentioned in the observed density
+over different seasons and year ranges in figures 3a, 3b, 3c, and 3d.
+The change occuring in the year range 2003-2009 and 2010-2021 seems
+similar to the change occurring between the year range 2041-2060 and
+2081-2100. This shows that both models can be reliable since both models
+predict a downward trend in density.
 
 Forecast
 
@@ -111,16 +134,21 @@ finmarchicus may provide information about prey and potential shared
 predators, the difference is still clear: Basking Sharks aren’t right
 whales and the data deficiency makes forecasting accuracy decrease. One
 method is through R-studio with the figure below:
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/load_data-1.png)<!-- -->
+
 Figure 6: Spatial training data. Like the Ai model mentioned later, the
 data is fed into a system and separated into testing and training.
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/tr_data-1.png)<!-- -->![](Forecasting-Izzy-Gottlieb_files/figure-gfm/tr_data-2.png)<!-- -->
+
 Figure 7: The confusion matrix for the data as well as the accuracy of
 different methods of forecasting. Based off of this information and the
 “AUC:” values we can see that a random forest(default_rf) model would
 work best with accuracy at 0.810. The second best option is a boosted
 tree format. The accuracy isn’t too low to make a prediction in other
 formats, but accuracy is important when making forecasts.
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/rf-1.png)<!-- -->
 
 Figure 8: The forecast with different covariables.
@@ -188,6 +216,7 @@ here unmentioned until now so below is Figure 9: the change in the
 presence of Basking sharks over many year. This wasn’t mentioned
 previously due to the lack of definitive proof that specific years had
 more of an impact than others.
+
 ![](Forecasting-Izzy-Gottlieb_files/figure-gfm/counts_per_year-1.png)<!-- -->
 Figure 9: Counts per year. There is a spike in population in 2002, a
 decrease in 2010, an increase a year later, and a sharp increase in
